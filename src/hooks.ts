@@ -1,4 +1,4 @@
-import { ExampleFactory } from "./modules/examples";
+import { CCFColumn } from "./modules/ccfColumn";
 import { config } from "../package.json";
 import { getString, initLocale } from "./utils/locale";
 import { createZToolkit } from "./utils/ztoolkit";
@@ -15,9 +15,9 @@ async function onStartup() {
   await onMainWindowLoad(window);
 
   // Register all UI components and listeners
-  ExampleFactory.registerRightClickMenuItem();
-  ExampleFactory.registerExtraColumn();
-  ExampleFactory.registerNotifier();
+  CCFColumn.registerRightClickMenuItem();
+  CCFColumn.registerExtraColumn();
+  CCFColumn.registerNotifier();
 }
 
 async function onMainWindowLoad(win: Window): Promise<void> {
@@ -52,7 +52,7 @@ async function onNotify(
     );
 
     if (regularItems.length !== 0) {
-      ExampleFactory.exampleNotifierCallback(regularItems);
+      CCFColumn.onItemAdded(regularItems);
       return;
     }
   }

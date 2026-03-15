@@ -4,8 +4,7 @@
 // @ts-nocheck
 export type FluentMessageId =
   | 'ccf-info'
-  | 'citation-number'
   | 'get-ccf-info'
   | 'paper-info-update'
-  | 'requesting-citation-single'
-  | 'requesting-citations-multiple';
+  | 'requesting-ccf-rank-multiple'
+  | 'requesting-ccf-rank-single';
