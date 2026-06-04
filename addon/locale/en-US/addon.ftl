@@ -1,5 +1,6 @@
 ccf-info = CCF Info
-get-ccf-info = Get CCF Info
+get-ccf-info =
+    .label = Get CCF Info
 paper-info-update = CCF Info Update
 requesting-ccf-rank-multiple = Requesting CCF info for { $count } items...
 requesting-ccf-rank-single = Requesting CCF info...

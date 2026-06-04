@@ -1,8 +1,11 @@
 import { config } from "../../package.json";
-import { getString } from "../utils/locale";
+import { getLocaleID, getString } from "../utils/locale";
 import { CCFResult, PaperInfo } from "./getPaperInfo";
 
 export class CCFColumn {
+  private static readonly MENU_ID = "zotero-itemmenu-get-ccf-info";
+  private static registeredMenuID: string | false = false;
+
   private static getCCFInfo(item: Zotero.Item): string {
     const rank = ztoolkit.ExtraField.getExtraField(item, "CCF-Rank") ?? "";
     const abbr = ztoolkit.ExtraField.getExtraField(item, "CCF-Abbr") ?? "";
@@ -121,17 +124,33 @@ export class CCFColumn {
   }
 
   static registerRightClickMenuItem() {
-    const menuIcon = `chrome://${ config.addonRef }/content/icons/favicon@0.5x.png`;
-    ztoolkit.Menu.register("item", {
-      tag: "menuitem",
-      id: "zotero-itemmenu-get-ccf-info",
-      label: getString("get-ccf-info"),
-      commandListener: (ev) => {
-        const items = ZoteroPane.getSelectedItems();
-        CCFColumn.handleGetCCFInfo(items);
-      },
-      icon: menuIcon,
+    const menuIcon = `chrome://${config.addonRef}/content/icons/favicon@0.5x.png`;
+    CCFColumn.registeredMenuID = Zotero.MenuManager.registerMenu({
+      menuID: CCFColumn.MENU_ID,
+      pluginID: config.addonID,
+      target: "main/library/item",
+      menus: [
+        {
+          menuType: "menuitem",
+          l10nID: getLocaleID("get-ccf-info"),
+          icon: menuIcon,
+          onShowing: (_event, context) => {
+            context.setVisible(
+              Boolean(context.items?.some((item) => item.isRegularItem())),
+            );
+          },
+          onCommand: (_event, context) => {
+            CCFColumn.handleGetCCFInfo(context.items ?? []);
+          },
+        },
+      ],
     });
+  }
+
+  static unregisterRightClickMenuItem() {
+    if (!CCFColumn.registeredMenuID) return;
+    Zotero.MenuManager.unregisterMenu(CCFColumn.registeredMenuID);
+    CCFColumn.registeredMenuID = false;
   }
 
   static registerNotifier() {

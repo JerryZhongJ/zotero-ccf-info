@@ -1,5 +1,6 @@
 ccf-info = CCF 信息
-get-ccf-info = 获取 CCF 信息
+get-ccf-info =
+    .label = 获取 CCF 信息
 paper-info-update = CCF 信息更新
 requesting-ccf-rank-multiple = 正在获取 { $count } 篇论文的 CCF 信息...
 requesting-ccf-rank-single = 正在获取 CCF 信息...

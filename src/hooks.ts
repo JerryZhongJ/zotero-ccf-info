@@ -26,6 +26,7 @@ async function onMainWindowLoad(win: Window): Promise<void> {
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
+  CCFColumn.unregisterRightClickMenuItem();
   ztoolkit.unregisterAll();
   addon.data.dialog?.window?.close();
 }
@@ -59,6 +60,7 @@ async function onNotify(
 }
 
 function onShutdown(): void {
+  CCFColumn.unregisterRightClickMenuItem();
   ztoolkit.unregisterAll();
   addon.data.dialog?.window?.close();
   // Remove addon object
