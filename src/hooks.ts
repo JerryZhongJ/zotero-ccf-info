@@ -23,6 +23,11 @@ async function onStartup() {
 async function onMainWindowLoad(win: Window): Promise<void> {
   // Create ztoolkit for every window
   addon.data.ztoolkit = createZToolkit();
+  // Load the plugin's Fluent file into the main window document so that
+  // DOM-based l10n (e.g. the `data-l10n-id` set on the right-click menu
+  // item by Zotero.MenuManager) can resolve messages from addon.ftl.
+  // @ts-ignore - MozXULElement is a Mozilla global available on the window
+  win.MozXULElement.insertFTLIfNeeded(`${config.addonRef}-addon.ftl`);
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {

@@ -1,6 +1,6 @@
 {
   "name": "zotero-ccf-info",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Zotero Plugin for easily obtaining the ccf rating of a paper and the corresponding conference/journal",
   "config": {
     "addonName": "Zotero CCF Info",
@@ -29,7 +29,7 @@
     "verify": "tsx scripts/verify-ccf-data.ts"
   },
   "dependencies": {
-    "zotero-plugin-toolkit": "5.1.0-beta.13"
+    "zotero-plugin-toolkit": "5.1.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
@@ -41,7 +41,7 @@
     "typescript-eslint": "^8.53.1",
     "undici": "^7.24.2",
     "zotero-plugin-scaffold": "^0.8.2",
-    "zotero-types": "4.1.0-beta.4"
+    "zotero-types": "4.1.2"
   },
   "prettier": {
     "printWidth": 80,
