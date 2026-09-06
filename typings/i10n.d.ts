@@ -3,7 +3,12 @@
 /* eslint-disable */
 // @ts-nocheck
 export type FluentMessageId =
+  | 'ccf-all-hosts-down'
   | 'ccf-info'
+  | 'ccf-update-net-error'
+  | 'ccf-update-not-found'
+  | 'ccf-update-partial'
+  | 'ccf-update-success'
   | 'get-ccf-info'
   | 'paper-info-update'
   | 'requesting-ccf-rank-multiple'

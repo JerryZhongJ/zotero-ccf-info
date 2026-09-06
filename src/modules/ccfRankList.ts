@@ -1414,13 +1414,6 @@ export const ccfRankList: { [key: string]: RankInfo } = {
     url: "/conf/soups",
     dblp: "/conf/soups/soups",
   },
-  "/conf/uss/": {
-    rank: "C",
-    abbr: "HotSec",
-    full: "",
-    url: "/conf/uss/",
-    dblp: "/conf/uss/hotsec",
-  },
   "/conf/eurosp": {
     rank: "C",
     abbr: "EuroS&P",
@@ -1650,7 +1643,7 @@ export const ccfRankList: { [key: string]: RankInfo } = {
     abbr: "ASE",
     full: "International Conference on Automated Software Engineering",
     url: "/conf/kbse",
-    dblp: "/conf/kbse/",
+    dblp: "/conf/kbse/kbse",
   },
   "/conf/icse": {
     rank: "A",
@@ -2028,7 +2021,7 @@ export const ccfRankList: { [key: string]: RankInfo } = {
     abbr: "TWEB",
     full: "ACM Transactions on the Web",
     url: "/journals/tweb",
-    dblp: "/journals/tweb",
+    dblp: "/journals/tweb/tweb",
   },
   "/journals/aei": {
     rank: "B",
@@ -4658,8 +4651,8 @@ export const ccfRankList: { [key: string]: RankInfo } = {
     rank: "C",
     abbr: "JCC",
     full: "CCF&IEEE International Conference on Joint Cloud Computing",
-    url: "",
-    dblp: "",
+    url: "/conf/jcc",
+    dblp: "/conf/jcc/jcc",
   },
   "/conf/ieeesec": {
     rank: "C",

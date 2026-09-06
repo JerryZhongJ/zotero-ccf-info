@@ -90,6 +90,50 @@ export class CCFColumn {
     }
   }
 
+  /**
+   * Show a result notification after a query batch finishes.
+   * Categories: network error, not found on DBLP, success.
+   * (null results = network-level failure from the DBLP client)
+   */
+  private static showResultNotification(results: (CCFResult | null)[]) {
+    const progressWindow = new ztoolkit.ProgressWindow(getString("paper-info-update"), {
+      closeOtherProgressWindows: true
+    });
+
+    const failed = results.filter(r => r === null || r.rank.startsWith("Net Error"));
+    const notFound = results.filter(r => r?.rank === "Not Found");
+    const found = results.length - failed.length - notFound.length;
+
+    if (failed.length === results.length) {
+      progressWindow.createLine({
+        text: getString("ccf-update-net-error", {
+          args: { count: failed.length, message: getString("ccf-all-hosts-down") }
+        }),
+        type: "fail"
+      });
+    } else if (notFound.length === results.length) {
+      progressWindow.createLine({
+        text: getString("ccf-update-not-found", { args: { count: notFound.length } }),
+        type: "default"
+      });
+    } else if (failed.length > 0 || notFound.length > 0) {
+      progressWindow.createLine({
+        text: getString("ccf-update-partial", {
+          args: { found, notFound: notFound.length, failed: failed.length }
+        }),
+        type: "default"
+      });
+    } else {
+      progressWindow.createLine({
+        text: getString("ccf-update-success", { args: { count: results.length } }),
+        type: "success"
+      });
+    }
+
+    progressWindow.show();
+    progressWindow.startCloseTimer(4000);
+  }
+
   private static async handleSingleItem(entry: Zotero.Item) {
     const progressWindow = new ztoolkit.ProgressWindow(getString("paper-info-update"), {
       closeOtherProgressWindows: true
@@ -102,7 +146,10 @@ export class CCFColumn {
     progressWindow.startCloseTimer(2000);
 
     const result = await PaperInfo.getPaperCCFRank(entry.getField("title"));
-    await CCFColumn.saveCCFInfo(entry, result);
+    if (result) {
+      await CCFColumn.saveCCFInfo(entry, result);
+    }
+    CCFColumn.showResultNotification([result]);
   }
 
   private static async handleMultipleItems(items: Zotero.Item[]) {
@@ -119,8 +166,11 @@ export class CCFColumn {
     const titles = items.map(item => item.getField("title"));
     const results = await PaperInfo.batchGetPaperCCFRank(titles);
     for (let i = 0; i < items.length; i++) {
-      await CCFColumn.saveCCFInfo(items[i], results[i]);
+      if (results[i]) {
+        await CCFColumn.saveCCFInfo(items[i], results[i]!);
+      }
     }
+    CCFColumn.showResultNotification(results);
   }
 
   static registerRightClickMenuItem() {
