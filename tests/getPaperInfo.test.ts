@@ -78,10 +78,27 @@ describe("getPaperCCFRank", () => {
     expect(searchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("falls back to CCF-None with local abbr when Crossref finds nothing", async () => {
+  it("Not Found when Crossref cannot locate the paper, even with a local venue", async () => {
+    // 论文未在 Crossref 定位到 = 失败（Not Found），不得用未核实的本地
+    // venue 宣判 CCF-None
     searchMock.mockResolvedValue([]);
     const r = await PaperInfo.getPaperCCFRank("Some Paper", "Workshop on Unknown Topics (WUT)");
-    expect(r).toEqual({ rank: "CCF-None", abbr: "WUT" });
+    expect(r).toEqual({ rank: "Not Found", abbr: "" });
+  });
+
+  it("CCF-None without abbr when venue has no parentheses (CacheIR/MPLR case)", async () => {
+    // Crossref 找到论文但 venue（MPLR）不在 CCF 表 → 权威判定 CCF-None，缩写可空
+    searchMock.mockResolvedValue([
+      {
+        title: "CacheIR: The Benefits of a Structured Representation for Inline Caches",
+        venue: "Proceedings of the 20th ACM SIGPLAN International Conference on Managed Programming Languages and Runtimes",
+      },
+    ]);
+    expect(
+      await PaperInfo.getPaperCCFRank(
+        "CacheIR: The Benefits of a Structured Representation for Inline Caches",
+      ),
+    ).toEqual({ rank: "CCF-None", abbr: "" });
   });
 
   it("falls back to Crossref when local venue is absent", async () => {

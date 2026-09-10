@@ -117,14 +117,16 @@ function extractAbbr(venue: string): string {
  * 用 Crossref 命中列表解析 CCF 等级。
  * 标题归一化精确匹配；venue 名匹配 ccfRankList；
  * PACMPL 专刊按 issue 号映射到对应会议等级。
+ * 标题匹配到但 venue 不在 CCF 表 → CCF-None；论文没匹配到 → Not Found。
  */
 function resolveCCFRank(hits: CrossrefHit[], title: string): CCFResult {
   const cleaned = cleanString(title);
-  let ccfNoneAbbr: string | undefined;
+  let matchedVenue = "";
 
   for (const hit of hits) {
     if (cleanString(hit.title) !== cleaned) continue;
     const venue = hit.venue ?? "";
+    matchedVenue = venue || matchedVenue;
 
     // PACMPL 专刊：按 issue 号映射到对应会议
     if (hit.issue && venue && isPacmpl(venue)) {
@@ -138,14 +140,13 @@ function resolveCCFRank(hits: CrossrefHit[], title: string): CCFResult {
     if (rankInfo) {
       return { rank: `CCF-${rankInfo.rank}`, abbr: rankInfo.abbr };
     }
-
-    const abbr = venue ? extractAbbr(venue) : "";
-    if (abbr && !ccfNoneAbbr) ccfNoneAbbr = abbr;
   }
 
-  return ccfNoneAbbr
-    ? { rank: "CCF-None", abbr: ccfNoneAbbr }
-    : { rank: "Not Found", abbr: "" };
+  // 标题匹配到了至少一条记录：venue 不在 CCF 目录 → CCF-None
+  if (matchedVenue) {
+    return { rank: "CCF-None", abbr: extractAbbr(matchedVenue) };
+  }
+  return { rank: "Not Found", abbr: "" };
 }
 
 export const PaperInfo = {
@@ -153,8 +154,9 @@ export const PaperInfo = {
 
   /**
    * 查询单篇论文的 CCF 等级。优先用本地 venue 匹配（零网络请求）；
-   * 本地未命中时走 Crossref 标题查询，网络也无果时用本地 venue 的
-   * 括号缩写兜底显示 CCF-None。
+   * 本地未命中时走 Crossref 标题查询核实。
+   * 结果语义：CCF-None = 论文已核实、venue 明确不在 CCF 目录（权威判定）；
+   * Not Found = 未能定位论文（失败，条目元数据可能有出入）。
    * 抛出 CrossrefNetworkError 表示网络层面失败，
    * 异常 message 中含最后一次失败的具体原因。
    */
@@ -188,13 +190,7 @@ export const PaperInfo = {
     }
 
     const hits = await this.client.search(title);
-    const result = resolveCCFRank(hits, title);
-
-    if (result.rank === "Not Found" && localVenue) {
-      const abbr = extractAbbr(localVenue);
-      if (abbr) return { rank: "CCF-None", abbr };
-    }
-    return result;
+    return resolveCCFRank(hits, title);
   },
 
   /**
