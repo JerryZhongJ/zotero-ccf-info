@@ -1,6 +1,7 @@
 import { config } from "../../package.json";
 import { getLocaleID, getString } from "../utils/locale";
 import { CCFResult, PaperInfo } from "./getPaperInfo";
+import { CrossrefNetworkError } from "./crossrefClient";
 
 export class CCFColumn {
   private static readonly MENU_ID = "zotero-itemmenu-get-ccf-info";
@@ -24,6 +25,32 @@ export class CCFColumn {
     "CCF-C": "#8eba3a",
     "CCF-None": "#6c757d",
   };
+
+  /**
+   * 从 Zotero 条目提取发表 venue：期刊名 / 会议论文集名 / 会议名。
+   * 没有 venue 元数据（如手录条目）时返回 undefined，由 Crossref 兜底。
+   */
+  private static getItemVenue(item: Zotero.Item): string | undefined {
+    try {
+      const venue =
+        item.getField("publicationTitle") ||
+        item.getField("proceedingsTitle") ||
+        item.getField("conferenceName");
+      return venue || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** 从 Zotero 条目提取专刊号（PACMPL 各会议专刊的映射依据） */
+  private static getItemIssue(item: Zotero.Item): string | undefined {
+    try {
+      const issue = item.getField("issue");
+      return issue || undefined;
+    } catch {
+      return undefined;
+    }
+  }
 
   static registerExtraColumn() {
     Zotero.ItemTreeManager.registerColumn({
@@ -92,22 +119,23 @@ export class CCFColumn {
 
   /**
    * Show a result notification after a query batch finishes.
-   * Categories: network error, not found on DBLP, success.
-   * (null results = network-level failure from the DBLP client)
+   * Categories: network error, not found on Crossref, success.
+   * (CrossrefNetworkError entries = network-level failure from the Crossref client,
+   *   whose message carries the concrete last error for diagnosis)
    */
-  private static showResultNotification(results: (CCFResult | null)[]) {
+  private static showResultNotification(results: (CCFResult | CrossrefNetworkError)[]) {
     const progressWindow = new ztoolkit.ProgressWindow(getString("paper-info-update"), {
       closeOtherProgressWindows: true
     });
 
-    const failed = results.filter(r => r === null || r.rank.startsWith("Net Error"));
-    const notFound = results.filter(r => r?.rank === "Not Found");
+    const failed = results.filter((r): r is CrossrefNetworkError => r instanceof CrossrefNetworkError);
+    const notFound = results.filter(r => r instanceof Object && (r as CCFResult).rank === "Not Found");
     const found = results.length - failed.length - notFound.length;
 
     if (failed.length === results.length) {
       progressWindow.createLine({
         text: getString("ccf-update-net-error", {
-          args: { count: failed.length, message: getString("ccf-all-hosts-down") }
+          args: { count: failed.length, message: failed[0].message }
         }),
         type: "fail"
       });
@@ -145,11 +173,21 @@ export class CCFColumn {
     progressWindow.show();
     progressWindow.startCloseTimer(2000);
 
-    const result = await PaperInfo.getPaperCCFRank(entry.getField("title"));
-    if (result) {
+    try {
+      const result = await PaperInfo.getPaperCCFRank(
+        entry.getField("title"),
+        CCFColumn.getItemVenue(entry),
+        CCFColumn.getItemIssue(entry),
+      );
       await CCFColumn.saveCCFInfo(entry, result);
+      CCFColumn.showResultNotification([result]);
+    } catch (err) {
+      if (err instanceof CrossrefNetworkError) {
+        CCFColumn.showResultNotification([err]);
+      } else {
+        throw err;
+      }
     }
-    CCFColumn.showResultNotification([result]);
   }
 
   private static async handleMultipleItems(items: Zotero.Item[]) {
@@ -163,11 +201,16 @@ export class CCFColumn {
     progressWindow.show();
     progressWindow.startCloseTimer(2000);
 
-    const titles = items.map(item => item.getField("title"));
-    const results = await PaperInfo.batchGetPaperCCFRank(titles);
+    const entries = items.map(item => ({
+      title: item.getField("title"),
+      venue: CCFColumn.getItemVenue(item),
+      issue: CCFColumn.getItemIssue(item),
+    }));
+    const results = await PaperInfo.batchGetPaperCCFRank(entries);
     for (let i = 0; i < items.length; i++) {
-      if (results[i]) {
-        await CCFColumn.saveCCFInfo(items[i], results[i]!);
+      const result = results[i];
+      if (result && !(result instanceof CrossrefNetworkError)) {
+        await CCFColumn.saveCCFInfo(items[i], result);
       }
     }
     CCFColumn.showResultNotification(results);

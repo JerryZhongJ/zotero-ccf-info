@@ -6,6 +6,5 @@ requesting-ccf-rank-multiple = Requesting CCF info for { $count } items...
 requesting-ccf-rank-single = Requesting CCF info...
 ccf-update-success = Updated { $count } item(s)
 ccf-update-net-error = Network error, { $count } item(s) failed: { $message }
-ccf-update-not-found = { $count } item(s) not found on DBLP
+ccf-update-not-found = { $count } item(s) not found
 ccf-update-partial = { $found } found, { $notFound } not found, { $failed } failed
-ccf-all-hosts-down = DBLP is rate-limiting or unreachable, please retry later
