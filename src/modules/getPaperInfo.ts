@@ -20,15 +20,17 @@ function cleanString(input: string): string {
 // 交给 Crossref 兜底，绝不冒认错 venue 的风险。
 // ---------------------------------------------------------------------------
 
-/** 匹配时忽略的功能词与纯数字（年份）token */
-const STOPWORDS = new Set(["the", "of", "on", "in", "and", "for", "a", "an"]);
+/** 匹配时忽略的功能词、proceedings 前缀与数字（年份/届数序号）token */
+const STOPWORDS = new Set([
+  "the", "of", "on", "in", "and", "for", "a", "an", "proceedings",
+]);
 
 function tokenize(input: string): Set<string> {
   return new Set(
     input
       .toLowerCase()
       .split(/[^a-z0-9]+/)
-      .filter((t) => t && !STOPWORDS.has(t) && !/^\d+$/.test(t)),
+      .filter((t) => t && !STOPWORDS.has(t) && !/^\d+(st|nd|rd|th)?$/.test(t)),
   );
 }
 
